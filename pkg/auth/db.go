@@ -18,18 +18,22 @@ type User struct {
 }
 
 type Database struct {
-	inner *sql.DB
+	inner  *sql.DB
+	logger *log.Logger
 }
 
 // FIXME: REMOVE THIS AS SOON AS POSSIBLE
-func initDb(db *sql.DB) {
+func initDb(db *sql.DB, logger *log.Logger) {
 	_, err := db.Exec("CREATE TABLE IF NOT EXISTS users (username TEXT UNIQUE, password_hash TEXT, elo INTEGER);")
 	if err != nil {
-		log.Fatal("Unable to init database")
+		logger.Fatal("Unable to init database")
 	}
 }
 
 func NewDatabase(connstring string) (Database, error) {
+	logger := util.NewLogger("DB")
+
+	logger.Println("Connecting do the database")
 	db, err := sql.Open("sqlite", connstring)
 	if err != nil {
 		return Database{}, err
@@ -40,14 +44,18 @@ func NewDatabase(connstring string) (Database, error) {
 		return Database{}, errors.New("Failed to connect to database")
 	}
 
-	initDb(db)
+	initDb(db, logger)
+	logger.Println("Initialized the database")
 
 	return Database{
-		inner: db,
+		inner:  db,
+		logger: logger,
 	}, nil
 }
 
 func (d *Database) GetUser(username string) (User, error) {
+	d.logger.Println("Getting user", username)
+
 	row := d.inner.QueryRow("SELECT username, password_hash, elo FROM users WHERE username = ? LIMIT 1;", username)
 
 	var u User

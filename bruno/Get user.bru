@@ -1,0 +1,19 @@
+meta {
+  name: Get user
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{HOST}}/get_user?username={{USERNAME}}
+  body: none
+  auth: inherit
+}
+
+params:query {
+  username: {{USERNAME}}
+}
+
+vars:pre-request {
+  USERNAME: macaron
+}

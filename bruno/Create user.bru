@@ -1,0 +1,23 @@
+meta {
+  name: Create user
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{HOST}}/create_user
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "username": "{{USERNAME}}",
+    "password": "{{PASSWORD}}"
+  }
+}
+
+vars:pre-request {
+  USERNAME: macaron
+  PASSWORD: thisdoesnotmatter
+}

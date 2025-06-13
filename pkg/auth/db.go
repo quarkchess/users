@@ -1,20 +1,32 @@
 package auth
 
 import (
+	"crypto/sha512"
 	"database/sql"
+	"encoding/hex"
 	"errors"
+	"log"
 
 	_ "github.com/glebarez/go-sqlite"
 	"github.com/stanekondrej/quarkchess/auth/pkg/auth/util"
 )
 
 type User struct {
-	Username string
-	Elo      uint
+	Username     string
+	PasswordHash string
+	Elo          uint
 }
 
 type Database struct {
 	inner *sql.DB
+}
+
+// FIXME: REMOVE THIS AS SOON AS POSSIBLE
+func initDb(db *sql.DB) {
+	_, err := db.Exec("CREATE TABLE IF NOT EXISTS users (username TEXT UNIQUE, password_hash TEXT, elo INTEGER);")
+	if err != nil {
+		log.Fatal("Unable to init database")
+	}
 }
 
 func NewDatabase(connstring string) (Database, error) {
@@ -28,22 +40,43 @@ func NewDatabase(connstring string) (Database, error) {
 		return Database{}, errors.New("Failed to connect to database")
 	}
 
+	initDb(db)
+
 	return Database{
 		inner: db,
 	}, nil
 }
 
 func (d *Database) GetUser(username string) (User, error) {
-	row, err := d.inner.Query("SELECT * FROM users WHERE username = ? LIMIT 1;", username)
+	row := d.inner.QueryRow("SELECT username, password_hash, elo FROM users WHERE username = ? LIMIT 1;", username)
+
+	var u User
+	err := row.Scan(&u.Username, &u.PasswordHash, &u.Elo)
 	if err != nil {
 		return User{}, err
 	}
 
-	var u User
-	err = row.Scan(&u)
+	return u, nil
+}
+
+func hashPassword(password string) string {
+	sum := sha512.Sum512([]byte(password))
+	return hex.EncodeToString(sum[:])
+}
+
+const DEFAULT_ELO uint = 1000
+
+func (d *Database) CreateUser(username string, password string) (User, error) {
+	hash := hashPassword(password)
+	_, err := d.inner.Exec("INSERT INTO users (username, password_hash, elo) VALUES (?, ?, ?);", username, hash, DEFAULT_ELO)
 	if err != nil {
-		panic("User struct doesn't have the correct amount of fields")
+		return User{}, err
 	}
 
-	return u, nil
+	// TODO: query the row from the database (?)
+	return User{
+		username,
+		hash,
+		DEFAULT_ELO,
+	}, nil
 }

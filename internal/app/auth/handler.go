@@ -2,6 +2,8 @@ package auth
 
 import (
 	"encoding/json"
+	"io"
+	"log"
 	"net/http"
 
 	"github.com/stanekondrej/quarkchess/auth/pkg/auth"
@@ -47,6 +49,9 @@ func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.db.GetUser(qUsername)
 	if err != nil {
+		log.Println("Requested user not found")
+		log.Println(err)
+
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("User does not exist"))
 
@@ -55,10 +60,62 @@ func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	d, err := json.Marshal(user)
 	if err != nil {
+		log.Printf("Unable to marshal user into JSON: %+v", user)
+		log.Println(err)
+
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(d)
+}
+
+func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Println("Unable to read body")
+		log.Println(err)
+
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	body := struct {
+		Username string
+		Password string
+	}{}
+	if err := json.Unmarshal(b, &body); err != nil {
+		log.Println("Body isn't valid json:", b)
+		log.Println(err)
+
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid JSON"))
+
+		return
+	}
+
+	u, err := h.db.CreateUser(body.Username, body.Password)
+	if err != nil {
+		log.Println("Unable to create user:", err)
+		log.Println(err)
+
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Unable to create user"))
+
+		return
+	}
+
+	j, err := json.Marshal(u)
+	if err != nil {
+		log.Printf("User (%+v) is not valid json\n", u)
+		log.Println(err)
+
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Write(j)
 }

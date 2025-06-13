@@ -12,9 +12,9 @@ import (
 )
 
 type User struct {
-	Username     string
-	PasswordHash string
-	Elo          uint
+	Username     string `json:"username"`
+	PasswordHash string `json:"password_hash"`
+	Elo          uint   `json:"elo"`
 }
 
 type Database struct {

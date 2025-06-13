@@ -1,36 +1,35 @@
-package auth
+package users
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
-	"github.com/stanekondrej/quarkchess/auth/pkg/auth"
-	"github.com/stanekondrej/quarkchess/auth/pkg/auth/util"
+	"github.com/stanekondrej/quarkchess/users/pkg/users"
+	"github.com/stanekondrej/quarkchess/users/pkg/users/util"
 )
 
 type handler struct {
-	db     auth.Database
-	logger *log.Logger
+	db     users.Database
+	logger *util.Logger
 }
 
 func NewHandler(connstring string) (handler, error) {
 	logger := util.NewLogger("HANDLER")
-	logger.Println("Initializing handler")
+	logger.Infoln("Initializing handler")
 
-	db, err := auth.NewDatabase(connstring)
+	db, err := users.NewDatabase(connstring)
 	if err != nil {
 		return handler{}, err
 	}
 
 	return handler{
 		db,
-		logger,
+		&logger,
 	}, nil
 }
 
 func (h *handler) GetVersion(w http.ResponseWriter, r *http.Request) {
-	h.logger.Println("Getting version")
+	h.logger.Infoln("Getting version")
 
 	d := struct {
 		Version string `json:"version"`

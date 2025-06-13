@@ -1,14 +1,13 @@
-package auth
+package users
 
 import (
 	"crypto/sha512"
 	"database/sql"
 	"encoding/hex"
 	"errors"
-	"log"
 
 	_ "github.com/glebarez/go-sqlite"
-	"github.com/stanekondrej/quarkchess/auth/pkg/auth/util"
+	"github.com/stanekondrej/quarkchess/users/pkg/users/util"
 )
 
 type User struct {
@@ -19,21 +18,21 @@ type User struct {
 
 type Database struct {
 	inner  *sql.DB
-	logger *log.Logger
+	logger *util.Logger
 }
 
 // FIXME: REMOVE THIS AS SOON AS POSSIBLE
-func initDb(db *sql.DB, logger *log.Logger) {
+func initDb(db *sql.DB, logger *util.Logger) {
 	_, err := db.Exec("CREATE TABLE IF NOT EXISTS users (username TEXT UNIQUE, password_hash TEXT, elo INTEGER);")
 	if err != nil {
-		logger.Fatal("Unable to init database")
+		logger.Fatalln("Unable to init database")
 	}
 }
 
 func NewDatabase(connstring string) (Database, error) {
 	logger := util.NewLogger("DB")
 
-	logger.Println("Connecting do the database")
+	logger.Infoln("Connecting to the database")
 	db, err := sql.Open("sqlite", connstring)
 	if err != nil {
 		return Database{}, err
@@ -44,17 +43,17 @@ func NewDatabase(connstring string) (Database, error) {
 		return Database{}, errors.New("Failed to connect to database")
 	}
 
-	initDb(db, logger)
-	logger.Println("Initialized the database")
+	initDb(db, &logger)
+	logger.Infoln("Initialized the database")
 
 	return Database{
 		inner:  db,
-		logger: logger,
+		logger: &logger,
 	}, nil
 }
 
 func (d *Database) GetUser(username string) (User, error) {
-	d.logger.Println("Getting user", username)
+	d.logger.Infof("Getting user %s\n", username)
 
 	row := d.inner.QueryRow("SELECT username, password_hash, elo FROM users WHERE username = ? LIMIT 1;", username)
 

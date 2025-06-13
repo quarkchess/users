@@ -1,4 +1,4 @@
-module github.com/stanekondrej/quarkchess/auth
+module github.com/stanekondrej/quarkchess/users
 
 go 1.24.4
 

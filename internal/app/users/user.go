@@ -1,4 +1,4 @@
-package auth
+package users
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 )
 
 func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
-	h.logger.Println("Getting user")
+	h.logger.Infoln("Getting user")
 
 	qUsername := r.URL.Query().Get("username")
 	if len(qUsername) == 0 {
@@ -19,8 +19,8 @@ func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.db.GetUser(qUsername)
 	if err != nil {
-		h.logger.Println("Requested user not found")
-		h.logger.Println(err)
+		h.logger.Errorln("Requested user not found")
+		h.logger.Errorln(err)
 
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("User does not exist"))
@@ -30,8 +30,8 @@ func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	d, err := json.Marshal(user)
 	if err != nil {
-		h.logger.Printf("Unable to marshal user into JSON: %+v", user)
-		h.logger.Println(err)
+		h.logger.Errorf("Unable to marshal user into JSON: %+v\n", user)
+		h.logger.Errorln(err)
 
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -42,13 +42,13 @@ func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	h.logger.Println("Creating user")
+	h.logger.Infoln("Creating user")
 
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.logger.Println("Unable to read body")
-		h.logger.Println(err)
+		h.logger.Errorln("Unable to read body")
+		h.logger.Errorln(err)
 
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -59,8 +59,8 @@ func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		Password string
 	}{}
 	if err := json.Unmarshal(b, &body); err != nil {
-		h.logger.Println("Body isn't valid json:", b)
-		h.logger.Println(err)
+		h.logger.Errorf("Body isn't valid json: %s\n", b)
+		h.logger.Errorln(err)
 
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Invalid JSON"))
@@ -70,8 +70,8 @@ func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	u, err := h.db.CreateUser(body.Username, body.Password)
 	if err != nil {
-		h.logger.Println("Unable to create user:", err)
-		h.logger.Println(err)
+		h.logger.Errorf("Unable to create user: %s\n", err)
+		h.logger.Errorln(err)
 
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Unable to create user"))
@@ -79,12 +79,12 @@ func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Printf("Created user %s\n", u.Username)
+	h.logger.Infof("Created user %s\n", u.Username)
 
 	j, err := json.Marshal(u)
 	if err != nil {
-		h.logger.Printf("User (%+v) is not valid json\n", u)
-		h.logger.Println(err)
+		h.logger.Errorf("User (%+v) is not valid json\n", u)
+		h.logger.Errorln(err)
 
 		w.WriteHeader(http.StatusInternalServerError)
 		return

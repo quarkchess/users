@@ -4,13 +4,13 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/stanekondrej/quarkchess/auth/internal/app/auth"
-	"github.com/stanekondrej/quarkchess/auth/pkg/auth/util"
+	"github.com/stanekondrej/quarkchess/users/internal/app/users"
+	"github.com/stanekondrej/quarkchess/users/pkg/users/util"
 )
 
 func main() {
 	logger := util.NewLogger("MAIN")
-	logger.Println("Starting auth server")
+	logger.Infoln("Starting auth server")
 
 	listenAddress, ok := os.LookupEnv("LISTEN_ADDRESS")
 	if !ok {
@@ -22,7 +22,7 @@ func main() {
 		logger.Fatalln("DB_CONNSTRING not specified")
 	}
 
-	h, err := auth.NewHandler(connstring)
+	h, err := users.NewHandler(connstring)
 	if err != nil {
 		logger.Fatalln("Failed to create handler:", err)
 	}

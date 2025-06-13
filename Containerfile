@@ -6,14 +6,14 @@ RUN go mod download
 
 COPY . .
 RUN go mod tidy
-RUN go test ./... && go build -o auth cmd/auth/main.go
+RUN go test ./... && go build -o users cmd/users/main.go
 
 FROM alpine:3.22
 
 WORKDIR /app
-COPY --from=builder /src/auth .
+COPY --from=builder /src/users .
 
 ENV DB_CONNSTRING=":memory:"
 ENV LISTEN_ADDRESS=":8000"
 
-ENTRYPOINT ["/app/auth"]
+ENTRYPOINT ["/app/users"]

@@ -2,8 +2,10 @@ package users
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -18,17 +20,21 @@ func createToken(secret []byte, claims jwt.MapClaims) (string, error) {
 }
 
 func createUserToken(secret []byte, username string) (string, error) {
+	d := time.Now().UTC()
+
 	return createToken(secret, jwt.MapClaims{
 		"sub": username,
-		"iat": time.Now().UTC(),
-		"exp": time.Now().UTC().Add(TOKEN_VALID_DURATION),
+		"iat": d.Unix(),
+		"exp": d.Add(TOKEN_VALID_DURATION).Unix(),
 	})
 }
 
 func createAnonToken(secret []byte) (string, error) {
+	d := time.Now().UTC()
+
 	return createToken(secret, jwt.MapClaims{
-		"iat": time.Now().UTC(),
-		"exp": time.Now().UTC().Add(TOKEN_VALID_DURATION),
+		"iat": d.Unix(),
+		"exp": d.Add(TOKEN_VALID_DURATION).Unix(),
 	})
 }
 
@@ -100,4 +106,65 @@ func (h *handler) LoginAnon(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(token))
+}
+
+func verifyToken(secret []byte, tokenString string) error {
+	// FIXME: set valid methods
+	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+		return []byte(secret), nil
+	},
+		jwt.WithExpirationRequired(),
+		jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Alg()}),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	exp, err := token.Claims.GetExpirationTime()
+	if err != nil {
+		return err
+	}
+
+	if time.Now().After(exp.Time) {
+		return errors.New("Expiry time has already passed")
+	}
+
+	return nil
+}
+
+func extractTokenFromHeader(header string) string {
+	split := strings.SplitN(header, "Bearer", 2)
+	if len(split) < 2 {
+		return ""
+	}
+
+	return strings.TrimSpace(split[1])
+}
+
+// Verifies that the token is valid
+func (h *handler) VerifyToken(w http.ResponseWriter, r *http.Request) {
+	h.logger.Infoln("Verifying existing JWT")
+
+	authHeader := r.Header.Get("Authorization")
+	if len(authHeader) == 0 {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("No auth header"))
+
+		return
+	}
+
+	token := extractTokenFromHeader(authHeader)
+	if len(token) == 0 {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("No token supplied"))
+		return
+	}
+
+	if err := verifyToken([]byte(h.secret), token); err != nil {
+		h.logger.Errorf("Unable to parse token: %s\n", err)
+
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 }

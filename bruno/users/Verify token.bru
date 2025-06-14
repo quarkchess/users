@@ -1,0 +1,19 @@
+meta {
+  name: Verify token
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{HOST}}/verify_token
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDk5MDc4NzUsImlhdCI6MTc0OTg5NzA3NX0.Pd9E41Dr4vYCSXsEqwV0D1cAf29JimrGNGJYbouSzqQgLEnJU2u8sVsKNHAqfnrv0pKppHsKGDYRetvKnt7ww
+}
+
+vars:pre-request {
+  TOKEN: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOiIyMDI1LTA2LTE0VDEzOjAwOjU2Ljg1ODgzNDg3MloiLCJpYXQiOiIyMDI1LTA2LTE0VDEwOjAwOjU2Ljg1ODgzMzc5WiJ9.AQjGwZtcbRmQ5LOhNKzxS_UFvCk7nuQfGcJm60H7vRDVluCzAR-TFfwjNATbwCtBTmWYaq_BNEoBMBXaQZNN9Q
+}

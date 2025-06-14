@@ -3,7 +3,7 @@ package util_test
 import (
 	"testing"
 
-	"github.com/stanekondrej/quarkchess/users/pkg/users/util"
+	"github.com/quarkchess/users/pkg/users/util"
 )
 
 func TestAssertion(t *testing.T) {

@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/quarkchess/users/pkg/users"
 	"github.com/stanekondrej/logger"
-	"github.com/stanekondrej/quarkchess/users/pkg/users"
 )
 
 type handler struct {

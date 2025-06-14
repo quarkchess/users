@@ -9,8 +9,8 @@ import (
 	"fmt"
 
 	_ "github.com/glebarez/go-sqlite"
+	"github.com/quarkchess/users/pkg/users/util"
 	"github.com/stanekondrej/logger"
-	"github.com/stanekondrej/quarkchess/users/pkg/users/util"
 )
 
 const DEFAULT_ELO uint = 1000

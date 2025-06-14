@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/quarkchess/users/internal/app/users"
 	"github.com/stanekondrej/logger"
-	"github.com/stanekondrej/quarkchess/users/internal/app/users"
 )
 
 func main() {

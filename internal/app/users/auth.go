@@ -11,8 +11,25 @@ import (
 
 var SIGNING_METHOD jwt.SigningMethod = jwt.SigningMethodHS512
 
+const TOKEN_VALID_DURATION = time.Hour * 3
+
 func createToken(secret []byte, claims jwt.MapClaims) (string, error) {
 	return jwt.NewWithClaims(SIGNING_METHOD, claims).SignedString(secret)
+}
+
+func createUserToken(secret []byte, username string) (string, error) {
+	return createToken(secret, jwt.MapClaims{
+		"sub": username,
+		"iat": time.Now().UTC(),
+		"exp": time.Now().UTC().Add(TOKEN_VALID_DURATION),
+	})
+}
+
+func createAnonToken(secret []byte) (string, error) {
+	return createToken(secret, jwt.MapClaims{
+		"iat": time.Now().UTC(),
+		"exp": time.Now().UTC().Add(TOKEN_VALID_DURATION),
+	})
 }
 
 // Logs the user in and gives them a JWT they can then use.
@@ -55,12 +72,7 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := jwt.MapClaims{
-		"user": body.Username,
-		"tc":   time.Now().UTC(),
-	}
-
-	token, err := createToken(h.secret, claims)
+	token, err := createUserToken([]byte(h.secret), body.Username)
 	if err != nil {
 		h.logger.Errorf("Failed to sign JWT: %s\n", err)
 
@@ -73,4 +85,15 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 // Gives the user an anonymous JWT that they can use for e.g. a persistent session thing
-//func (h *handler) LoginAnon(w http.ResponseWriter, r *http.Request)
+func (h *handler) LoginAnon(w http.ResponseWriter, r *http.Request) {
+	token, err := createAnonToken([]byte(h.secret))
+	if err != nil {
+		h.logger.Errorf("Failed to create anon JWT: %s\n", err)
+
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(token))
+}

@@ -29,6 +29,7 @@ func main() {
 
 	http.HandleFunc("/", h.GetVersion)
 	http.HandleFunc("POST /login", h.Login)
+	http.HandleFunc("POST /login_anon", h.LoginAnon)
 	http.HandleFunc("/get_user", h.GetUser)
 	http.HandleFunc("POST /create_user", h.CreateUser)
 

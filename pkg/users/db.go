@@ -74,6 +74,8 @@ func hashPassword(password string) string {
 const DEFAULT_ELO uint = 1000
 
 func (d *Database) CreateUser(username string, password string) (User, error) {
+	d.logger.Infof("Creating user %s\n", username)
+
 	hash := hashPassword(password)
 	_, err := d.inner.Exec("INSERT INTO users (username, password_hash, elo) VALUES (?, ?, ?);", username, hash, DEFAULT_ELO)
 	if err != nil {
@@ -89,6 +91,8 @@ func (d *Database) CreateUser(username string, password string) (User, error) {
 }
 
 func (d *Database) VerifyPassword(username, password string) (bool, error) {
+	d.logger.Infof("Verifying password of user %s\n", username)
+
 	computedHash := hashPassword(password)
 	row := d.inner.QueryRow("SELECT password_hash FROM users WHERE username = ? LIMIT 1;", username)
 

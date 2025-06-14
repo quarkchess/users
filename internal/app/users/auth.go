@@ -34,6 +34,8 @@ func createAnonToken(secret []byte) (string, error) {
 
 // Logs the user in and gives them a JWT they can then use.
 func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
+	h.logger.Infoln("Creating new JWT")
+
 	defer r.Body.Close()
 
 	b, err := io.ReadAll(r.Body)
@@ -86,6 +88,8 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 
 // Gives the user an anonymous JWT that they can use for e.g. a persistent session thing
 func (h *handler) LoginAnon(w http.ResponseWriter, r *http.Request) {
+	h.logger.Infoln("Creating new anonymous JWT")
+
 	token, err := createAnonToken([]byte(h.secret))
 	if err != nil {
 		h.logger.Errorf("Failed to create anon JWT: %s\n", err)

@@ -13,7 +13,4 @@ FROM alpine:3.22
 WORKDIR /app
 COPY --from=builder /src/users .
 
-ENV DB_CONNSTRING=":memory:"
-ENV LISTEN_ADDRESS=":8000"
-
 ENTRYPOINT ["/app/users"]

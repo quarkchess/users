@@ -27,12 +27,15 @@ func main() {
 		logger.Fatalln("Failed to create handler:", err)
 	}
 
-	http.HandleFunc("GET /", h.GetVersion)
-	http.HandleFunc("GET /verify_token", h.VerifyToken)
-	http.HandleFunc("GET /get_user", h.GetUser)
-	http.HandleFunc("POST /login", h.Login)
-	http.HandleFunc("POST /login_anon", h.LoginAnon)
-	http.HandleFunc("POST /create_user", h.CreateUser)
+	http.HandleFunc("GET /version", h.GetVersion)
+
+	http.HandleFunc("GET /token/verify", h.VerifyToken)
+	http.HandleFunc("GET /token/claims", h.VerifyTokenAndGetClaims)
+
+	http.HandleFunc("GET /user/get", h.GetUser)
+	http.HandleFunc("POST /user/auth/login", h.Login)
+	http.HandleFunc("POST /user/auth/login_anon", h.LoginAnon)
+	http.HandleFunc("POST /user/create", h.CreateUser)
 
 	logger.Fatalln(http.ListenAndServe(listenAddress, nil))
 }

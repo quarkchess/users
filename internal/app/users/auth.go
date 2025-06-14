@@ -108,7 +108,7 @@ func (h *handler) LoginAnon(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(token))
 }
 
-func verifyToken(secret []byte, tokenString string) error {
+func decodeToken(secret []byte, tokenString string) (*jwt.Token, error) {
 	// FIXME: set valid methods
 	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
@@ -118,19 +118,19 @@ func verifyToken(secret []byte, tokenString string) error {
 	)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	exp, err := token.Claims.GetExpirationTime()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if time.Now().After(exp.Time) {
-		return errors.New("Expiry time has already passed")
+		return nil, errors.New("Expiry time has already passed")
 	}
 
-	return nil
+	return token, nil
 }
 
 func extractTokenFromHeader(header string) string {
@@ -161,10 +161,43 @@ func (h *handler) VerifyToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := verifyToken([]byte(h.secret), token); err != nil {
+	if _, err := decodeToken([]byte(h.secret), token); err != nil {
 		h.logger.Errorf("Unable to parse token: %s\n", err)
 
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+}
+
+// verifies a token's validity and returns its claims if it is valid
+func (h *handler) VerifyTokenAndGetClaims(w http.ResponseWriter, r *http.Request) {
+	h.logger.Infoln("Decoding JWT token")
+
+	authHeader := r.Header.Get("Authorization")
+	if len(authHeader) == 0 {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("No auth header"))
+
+		return
+	}
+
+	t := extractTokenFromHeader(authHeader)
+	token, err := decodeToken([]byte(h.secret), t)
+	if err != nil {
+		h.logger.Infoln("User is not authorized")
+
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	j, err := json.Marshal(token.Claims)
+	if err != nil {
+		h.logger.Errorf("Unable to serialize token claims: %s\n", err)
+
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(j)
 }

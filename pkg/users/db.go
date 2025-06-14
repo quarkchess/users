@@ -87,3 +87,15 @@ func (d *Database) CreateUser(username string, password string) (User, error) {
 		DEFAULT_ELO,
 	}, nil
 }
+
+func (d *Database) VerifyPassword(username, password string) (bool, error) {
+	computedHash := hashPassword(password)
+	row := d.inner.QueryRow("SELECT password_hash FROM users WHERE username = ? LIMIT 1;", username)
+
+	var expectedHash string
+	if err := row.Scan(&expectedHash); err != nil {
+		return false, err
+	}
+
+	return computedHash == expectedHash, nil
+}

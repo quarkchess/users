@@ -1,6 +1,7 @@
 package users
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"net/http"
 
@@ -11,6 +12,15 @@ import (
 type handler struct {
 	db     users.Database
 	logger *util.Logger
+
+	secret []byte
+}
+
+func genSecret() []byte {
+	buf := make([]byte, 64)
+
+	rand.Read(buf)
+	return buf
 }
 
 func NewHandler(connstring string) (handler, error) {
@@ -22,9 +32,11 @@ func NewHandler(connstring string) (handler, error) {
 		return handler{}, err
 	}
 
+	secret := genSecret()
 	return handler{
 		db,
 		&logger,
+		secret,
 	}, nil
 }
 

@@ -28,17 +28,8 @@ func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	d, err := json.Marshal(user)
-	if err != nil {
-		h.logger.Errorf("Unable to marshal user into JSON: %+v\n", user)
-		h.logger.Errorln(err)
-
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	w.WriteHeader(http.StatusOK)
-	w.Write(d)
+	w.Write([]byte(user))
 }
 
 func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {

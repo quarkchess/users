@@ -4,12 +4,12 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/stanekondrej/logger"
 	"github.com/stanekondrej/quarkchess/users/internal/app/users"
-	"github.com/stanekondrej/quarkchess/users/pkg/users/util"
 )
 
 func main() {
-	logger := util.NewLogger("MAIN")
+	logger := logger.NewLogger("MAIN")
 	logger.Infoln("Starting auth server")
 
 	listenAddress, ok := os.LookupEnv("LISTEN_ADDRESS")

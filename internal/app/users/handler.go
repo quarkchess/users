@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/stanekondrej/logger"
 	"github.com/stanekondrej/quarkchess/users/pkg/users"
-	"github.com/stanekondrej/quarkchess/users/pkg/users/util"
 )
 
 type handler struct {
 	db     users.Database
-	logger *util.Logger
+	logger *logger.Logger
 
 	secret string
 }
@@ -26,7 +26,7 @@ func genSecret() string {
 }
 
 func NewHandler(connstring string) (handler, error) {
-	logger := util.NewLogger("HANDLER")
+	logger := logger.NewLogger("HANDLER")
 	logger.Infoln("Initializing handler")
 
 	db, err := users.NewDatabase(connstring)

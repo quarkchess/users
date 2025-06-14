@@ -4,33 +4,57 @@ import (
 	"crypto/sha512"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"fmt"
 
 	_ "github.com/glebarez/go-sqlite"
+	"github.com/stanekondrej/logger"
 	"github.com/stanekondrej/quarkchess/users/pkg/users/util"
+)
+
+const DEFAULT_ELO uint = 1000
+
+type Role uint8
+
+const (
+	Admin   Role = iota
+	Regular      = iota
+	Anon         = iota
 )
 
 type User struct {
 	Username     string `json:"username"`
+	Role         Role   `json:"role"`
 	PasswordHash string `json:"password_hash"`
 	Elo          uint   `json:"elo"`
 }
 
 type Database struct {
 	inner  *sql.DB
-	logger *util.Logger
+	logger *logger.Logger
 }
 
 // FIXME: REMOVE THIS AS SOON AS POSSIBLE
-func initDb(db *sql.DB, logger *util.Logger) {
-	_, err := db.Exec("CREATE TABLE IF NOT EXISTS users (username TEXT UNIQUE, password_hash TEXT, elo INTEGER);")
+func initDb(db *sql.DB, logger *logger.Logger) {
+	// FIXME: this is crazy
+	_, err := db.Exec(fmt.Sprintf(
+		`CREATE TABLE IF NOT EXISTS users (
+			username      TEXT UNIQUE NOT NULL,
+			role          INTEGER NOT NULL DEFAULT %d,
+			password_hash TEXT NOT NULL,
+			elo           INTEGER NOT NULL DEFAULT %d
+		);`,
+		Regular,
+		DEFAULT_ELO),
+	)
 	if err != nil {
-		logger.Fatalln("Unable to init database")
+		logger.Fatalf("Unable to init database: %s\n", err)
 	}
 }
 
 func NewDatabase(connstring string) (Database, error) {
-	logger := util.NewLogger("DB")
+	logger := logger.NewLogger("DB")
 
 	logger.Infoln("Connecting to the database")
 	db, err := sql.Open("sqlite", connstring)
@@ -52,18 +76,28 @@ func NewDatabase(connstring string) (Database, error) {
 	}, nil
 }
 
-func (d *Database) GetUser(username string) (User, error) {
+func (d *Database) GetUser(username string) (string, error) {
 	d.logger.Infof("Getting user %s\n", username)
 
-	row := d.inner.QueryRow("SELECT username, password_hash, elo FROM users WHERE username = ? LIMIT 1;", username)
+	row := d.inner.QueryRow("SELECT username, role, elo FROM users WHERE username = ? LIMIT 1;", username)
 
-	var u User
-	err := row.Scan(&u.Username, &u.PasswordHash, &u.Elo)
+	// var u User
+	var u struct {
+		Username string `json:"username"`
+		Role     Role   `json:"role"`
+		Elo      uint   `json:"elo"`
+	}
+	err := row.Scan(&u.Username, &u.Role, &u.Elo)
 	if err != nil {
-		return User{}, err
+		return "", err
 	}
 
-	return u, nil
+	j, err := json.Marshal(u)
+	if err != nil {
+		return "", nil
+	}
+
+	return string(j), nil
 }
 
 func hashPassword(password string) string {
@@ -71,13 +105,11 @@ func hashPassword(password string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-const DEFAULT_ELO uint = 1000
-
 func (d *Database) CreateUser(username string, password string) (User, error) {
 	d.logger.Infof("Creating user %s\n", username)
 
 	hash := hashPassword(password)
-	_, err := d.inner.Exec("INSERT INTO users (username, password_hash, elo) VALUES (?, ?, ?);", username, hash, DEFAULT_ELO)
+	_, err := d.inner.Exec("INSERT INTO users (username, password_hash) VALUES (?, ?);", username, hash)
 	if err != nil {
 		return User{}, err
 	}
@@ -85,6 +117,7 @@ func (d *Database) CreateUser(username string, password string) (User, error) {
 	// TODO: query the row from the database (?)
 	return User{
 		username,
+		Regular,
 		hash,
 		DEFAULT_ELO,
 	}, nil
